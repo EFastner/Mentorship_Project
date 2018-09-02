@@ -1,0 +1,9 @@
+---
+title: "Project Proposal"
+author: "Eric Fastner"
+date: "September 1, 2018"
+output: html_document
+---
+
+## Topic Proposal
+
