@@ -16,6 +16,7 @@ I believe that it is possible to estimate the potential ceiling of a player earl
 
 ###Definition of terms
 * **Potential Ceiling:** To be further determined, however this refers to the the estimated on ice contribution of a player in future years. Possible systems of ranking could include the following:
+    + Usual performance metrics such as Corsi, Fenwick, Goals, Assists, etc. 
     + [Game Score](https://hockey-graphs.com/2016/07/13/measuring-single-game-productivity-an-introduction-to-game-score/)
     + [Evolving Wild's GAR](https://hockeygraphsdotcom.files.wordpress.com/2018/08/gar_spm_ritsac_18.pdf)
     + [Corsica's WAR](http://corsica.hockey/war/)
@@ -31,14 +32,32 @@ I believe that it is possible to estimate the potential ceiling of a player earl
 I think that this project will need to be approached in a number of phases:
 
 1. Identify the data needed. More thoughts on this step below
-2. Explore data sets. Review player performance throughout their career to understand the nature of "growth" of a player throughout their career. Common knowledge would suggest that a player's value increases from the time that they enter the league until they approach a certain age (somewhere around their 30s) at which point their production begins to taper off
+
+2. Explore data sets. Review player performance throughout their career to understand the nature of "growth" of a player throughout their career. Common knowledge would suggest that a player's value increases from the time that they enter the league until they approach a certain age (the [general concensus](https://hockey-graphs.com/2017/03/23/a-new-look-at-aging-curves-for-nhl-skaters-part-1/) seems to think around 25ish with a faster decline starting around 30) at which point their production begins to taper off
+
 3. Identify "Top Tier" players who have been in the league for 5+ years
+
 4. Examine how top tier players are utilized on a team (time on ice, roster spots, lines, etc.). The goal is to identify how this utilization changes relative to performance. I would hypothesize that a team is more willing to invest resources in a younger player who's performance may not yet justify it in the hopes that the player will one day develop into a top tier performer. Is there an age level where that changes? When does a team appear to "give up" on a player's potential and begin reducing ice time of a player? 
-4. Model development. Determine which metrics best predict future performance. A good starting point may be with a linear regression similar to an expected goals model?
-5. Evaluate model and the preferable number of games that provides a large enough sample set to become confident in it's results. How does that number of games compare to actual league behavior? 
-6. Utilize model to evaluate current young players in the NHL. Identify possible players who have strong potential to become a start as well as players who it may be time for teams to begin allocating resources elsewhere
 
+5. Model development. Determine which metrics best predict future performance. A good starting point may be with a linear regression similar to an expected goals model?
 
-## Additional Information Needed
+6. Evaluate model and the preferable number of games that provides a large enough sample set to become confident in it's results. How does that number of games compare to actual league behavior? 
 
-## Possible Data Sets to Utilie
+7. Utilize model to evaluate current young players in the NHL. Identify possible players who have strong potential to become a start as well as players who it may be time for teams to begin allocating resources elsewhere
+
+## Additional Information/Skillsets that may benefit the project
+#### *Projecting future player contributions: Aging Curves*
+As can be expected, the idea of predicting the future performance of young players has been discussed ad nauseum. I am still pouring through as much documentation as possible, however it is becoming increasingly obvious that the research done on predicting future performance is synonymous with aging curves. I think that it will be very beneficial to make sure that I understand the previous literature done on againg curves as much as possible before moving forward.
+
+#### *Statistical Modeling*
+I have a very limited knowledge of statistical modeling, which is one of the reasons that I chose a project that I feel may require a number of techniques involving developing and evaluating statistical models. However, before I can start I think that I will need to develop some further knowledge of different models, when/how they are utilized, and how to evaluate them.
+
+#### *Measuring Hockey Performance*
+The great thing about the hockey analytics community is that everyone has a different methodology for determining player performance and contribution. Some of the people who I've focused on the most are probably pretty obvious: [Manny Elk](https://twitter.com/manny_hockey), [EvolvingWild](https://twitter.com/EvolvingWild), [Tyler Dellow](https://twitter.com/dellowhockey), [Dom Luszczyszyn](https://twitter.com/domluszczyszyn), [Matt Barlowe](https://twitter.com/matt_barlowe), and [Namita Nandakumar](https://twitter.com/nnstats) are some of my favorites. That said, a lot off these people are also "standing on the shoulders of giants" and I would like to expand my knowledge as much as possible before getting started.
+
+#### *Possible Data Sets to Utilize*
+I have already downloaded and utilized data from [Corsica's Enhanced Play-by-Play files](https://twitter.com/CorsicaHockey/status/980931037533532160) which should help with any ad hoc modeling that I would like to do from the 07-08 season to present. From my understanding, the 2007-2008 season is really the earliest that PbP data exists.
+
+Additionally, I'll need to get the draft results for previous seasons to help me identify top-tier players. I do not have this information yet, but I'm confident that it is readily available online somewhere. 
+
+One "nice to have" item that may turn out to be interesting to analyze would be how player performance in other leagues may help predict future NHL performance of you players. for that to happen I would likely need to do some data mining of other league data and further understand [NHLe](https://www.nhlnumbers.com/2015/07/17/predicting-future-nhl-scoring-success-with-nhle-thresholds-related-factors) and how it may impact rankings
