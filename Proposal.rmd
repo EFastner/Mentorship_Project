@@ -8,13 +8,13 @@ output: html_document
 ## Background
 Over the years a number of hockey minds such as [Denis Potvin](https://www.theglobeandmail.com/sports/midseason-report/article1068323/?page=all) and [Bruce Boudreau](http://www.startribune.com/q-amp-a-with-wild-coach-bruce-boudreau/444222393/) have asserted that it takes around 300 games in the NHL for a player to accumulate enough experience to fully mature. Unfortunately for that player's NHL team, a significant amount of resources must be invested into giving a player almost 4 years to develop in an NHL program. 
 
-Especially in the slary cap era, it's important for teams to allocate their resources as efficiently as possible. The opportunity costs of investment in Salary, Cap Space, Roster Spots, Ice Time on a player that doesn't pan out could have significant negative implications on a franchise's future. Based on [Alex Novet's conclusions](https://hockey-graphs.com/2017/03/14/strong-and-weak-links-talent-distribution-within-teams/), hockey appears to be a sport where the best players tend to impact a team's overall results quite a bit more than having a consistently strong depth team with less high-end talent. As a result, it would stand to reason that it is very important for teams to identify the high-end potential of their young players and invest in them rather than a player who's ceiling my not be much higher than replacement level. 
+Especially in the slary cap era, it's important for teams to allocate their resources as efficiently as possible. The opportunity costs of investment in salary, cap space, roster spots, and ice time on a player that doesn't pan out could have significant negative implications on a franchise's future. Based on [Alex Novet's conclusions](https://hockey-graphs.com/2017/03/14/strong-and-weak-links-talent-distribution-within-teams/), hockey appears to be a sport where the best players tend to impact a team's overall results quite a bit more than having a consistently strong depth team with less high-end talent. As a result, it would stand to reason that it is very important for teams to identify the high-end potential of their young players and invest in them rather than a player who's ceiling my not be much higher than replacement level. 
 
 ## Proposal
 
 I believe that it is possible to estimate the potential ceiling of a player earlier than a player's 300th game. I intend to research how early we may be able to be comfortable with an estimate and to what level a team should we willing to invest roster space and ice time into said player to ensure that their assessment is correct. I suspect that players are currently investing too much in players that will likely only become depth-players.
 
-###Definition of terms
+### Definition of Terms
 * **Potential Ceiling:** To be further determined, however this refers to the the estimated on ice contribution of a player in future years. Possible systems of ranking could include the following:
     + Usual performance metrics such as Corsi, Fenwick, Goals, Assists, etc. 
     + [Game Score](https://hockey-graphs.com/2016/07/13/measuring-single-game-productivity-an-introduction-to-game-score/)
@@ -26,7 +26,7 @@ I believe that it is possible to estimate the potential ceiling of a player earl
 
 * **Top-Tier Players:** Players drafted in the first or second round of their draft years
 
-* **Lower-Tier Players:** Players drafted afte the second round of their draft years, or obtained via free agency
+* **Lower-Tier Players:** Players drafted after the second round of their draft years, or obtained via free agency
 
 ## Methodology
 I think that this project will need to be approached in a number of phases:
@@ -43,9 +43,9 @@ I think that this project will need to be approached in a number of phases:
 
 6. Evaluate model and the preferable number of games that provides a large enough sample set to become confident in it's results. How does that number of games compare to actual league behavior? 
 
-7. Utilize model to evaluate current young players in the NHL. Identify possible players who have strong potential to become a start as well as players who it may be time for teams to begin allocating resources elsewhere
+7. Utilize model to evaluate current young players in the NHL. Identify possible players who have strong potential to become a star as well as players who it may be time for teams to begin allocating resources elsewhere
 
-## Additional Information/Skillsets that may benefit the project
+## Additional Information/Skillsets That May Benefit the Project
 #### *Projecting future player contributions: Aging Curves*
 As can be expected, the idea of predicting the future performance of young players has been discussed ad nauseum. I am still pouring through as much documentation as possible, however it is becoming increasingly obvious that the research done on predicting future performance is synonymous with aging curves. I think that it will be very beneficial to make sure that I understand the previous literature done on againg curves as much as possible before moving forward.
 
@@ -53,11 +53,14 @@ As can be expected, the idea of predicting the future performance of young playe
 I have a very limited knowledge of statistical modeling, which is one of the reasons that I chose a project that I feel may require a number of techniques involving developing and evaluating statistical models. However, before I can start I think that I will need to develop some further knowledge of different models, when/how they are utilized, and how to evaluate them.
 
 #### *Measuring Hockey Performance*
-The great thing about the hockey analytics community is that everyone has a different methodology for determining player performance and contribution. Some of the people who I've focused on the most are probably pretty obvious: [Manny Elk](https://twitter.com/manny_hockey), [EvolvingWild](https://twitter.com/EvolvingWild), [Tyler Dellow](https://twitter.com/dellowhockey), [Dom Luszczyszyn](https://twitter.com/domluszczyszyn), [Matt Barlowe](https://twitter.com/matt_barlowe), and [Namita Nandakumar](https://twitter.com/nnstats) are some of my favorites. That said, a lot off these people are also "standing on the shoulders of giants" and I would like to expand my knowledge as much as possible before getting started.
+The great thing about the hockey analytics community is that everyone has a different methodology for determining player performance and contribution. Some of the people who I've focused on the most are probably pretty obvious: [Manny Elk](https://twitter.com/manny_hockey), [EvolvingWild](https://twitter.com/EvolvingWild), [Tyler Dellow](https://twitter.com/dellowhockey), [Dom Luszczyszyn](https://twitter.com/domluszczyszyn), [Matt Barlowe](https://twitter.com/matt_barlowe), and [Namita Nandakumar](https://twitter.com/nnstats) are some of my favorites. That said, a lot of these people are also "standing on the shoulders of giants" and I would like to expand my knowledge base as much as possible before getting started.
+
+#### *Bias from Players that Leave the League*
+One area that I'm struggling with is how to account for players who are not in the league for very long. The stories of these players are important as well and shouldn't be overlooked. I probably need to further investigate how to include this player performance in my model.
 
 #### *Possible Data Sets to Utilize*
-I have already downloaded and utilized data from [Corsica's Enhanced Play-by-Play files](https://twitter.com/CorsicaHockey/status/980931037533532160) which should help with any ad hoc modeling that I would like to do from the 07-08 season to present. From my understanding, the 2007-2008 season is really the earliest that PbP data exists.
+I have already downloaded and utilized data from [Corsica's Enhanced Play-by-Play files](https://twitter.com/CorsicaHockey/status/980931037533532160) which should help with any ad hoc modeling that I would like to do from the 07-08 season to present. From my understanding the 2007-2008 season is really the earliest that PbP data exists, so that will limit the extent to which I can analyze past performance.
 
-Additionally, I'll need to get the draft results for previous seasons to help me identify top-tier players. I do not have this information yet, but I'm confident that it is readily available online somewhere. 
+Additionally, I'll need to get the draft results for previous seasons to help me identify top-tier players. I do not have this information yet, but I'm confident that it is readily available online somewhere. Draft data is frequently used in a number of the analyses that I've seen online. 
 
-One "nice to have" item that may turn out to be interesting to analyze would be how player performance in other leagues may help predict future NHL performance of you players. for that to happen I would likely need to do some data mining of other league data and further understand [NHLe](https://www.nhlnumbers.com/2015/07/17/predicting-future-nhl-scoring-success-with-nhle-thresholds-related-factors) and how it may impact rankings
+One "nice to have" item that may turn out to be interesting to analyze would be how player performance in other leagues may help predict future NHL performance of those players. For that to happen I would likely need to do some data mining of other league data and further understand conepts like  [NHLe](https://www.nhlnumbers.com/2015/07/17/predicting-future-nhl-scoring-success-with-nhle-thresholds-related-factors) and how they may impact rankings
