@@ -1,0 +1,204 @@
+---
+title: "Skater_Stats"
+author: "Eric Fastner"
+date: "September 18, 2018"
+output: html_document
+---
+# **Skater Season Stats**
+##Purpose
+The purpose of this excercise is to create a methodology for converting the enhanced PBP data obtained from Corsica into a summary of relevant statistics for each player
+
+##Required Packages
+I utilized the following packages in this process, so I'll load them in at the beginning
+
+```{r load_libraries, message=FALSE, warning=FALSE}
+require(magrittr)
+require(dplyr)
+```
+
+##Initial Data Set
+I've included a sample data set from the 2017-2018 season that I've obtained from Corsica in the same github repository as this markdown document
+
+```{r load_data}
+raw_season <- read.csv(file = "~/Data Sets/Hockey/Enhanced PbP/pbp_20172018.csv", header = TRUE)
+
+```
+
+##Corsi Items
+To ease with referencing Shots, Blocks, Misses, and Goals as corsi items later, I set up an object with the corresponding event_type values on the PBP file to check against later:
+
+```{r add_corsi_items}
+#Assign Shapes for Corsi Shot Types
+v.corsi_events <- c(16, 17, 1, 0)
+names(v.corsi_events) <- c("SHOT", "GOAL", "MISS", "BLOCK")
+```
+
+##Add Additional Data
+In order to make summarising the data easier, I wrote in some additional columns that will come in handy later
+
+```{r enchanced_pbp}
+ds.enhancedPBP <- function(rawdata) {
+  #DESCRIPTION - 
+  #Add Dummy Column for Home Team
+  rawdata$is_home <- ifelse(rawdata$event_team == as.character(rawdata$home_team),1,0)
+
+  #Add Dummy Column for Corsi
+  rawdata$is_corsi <- ifelse(rawdata$event_type %in% names(v.corsi_events), 1, 0)
+  
+  return(rawdata)
+}
+
+enhanced_pbp <- ds.enhancedPBP(raw_season)
+```
+
+##Summarizing specific stats
+The challenge in summarizing data from a PBP set is that you need to identify all of the players with ice time, however there are 12 different fields that signify players on the ice: 
+
+**Home Players**
+
+* home_on_1
+* home_on_2
+* home_on_3
+* home_on_4
+* home_on_5
+* home_on_6
+  
+**Away Players**
+
+* away_on_1
+* away_on_2
+* away_on_3
+* away_on_4
+* away_on_5
+* away_on_6
+  
+In order to ensure that I grab all players who hit the ice, I approached this section in two steps. The below function does all of the heavy lifting of calculating each statistic when passed a PBP data frame with one of the above columns renamed to "player" as well as an indicator as to whether it is a home or away column. This indicator aids in the calculation of side specific stats such as corsi for and corsi against
+
+```{r skater_stats}
+fun.skater_stats <- function(dataset, team_indicator) {
+  #DESCRIPTION - Create Summary of stats for all skaters on each team. Specific to home/away  
+  
+  if(team_indicator == "home") {
+    output <- 
+      subset(dataset, !player %in% goalie) %>% group_by(player, team) %>% 
+      summarise(
+        TOI = sum(event_length)/60,
+        G = sum(event_type == "GOAL" & event_player_1 == as.character(player)),
+        A1 = sum(event_type == "GOAL" & event_player_2 == as.character(player) & !is.na(event_player_2)),
+        A2 = sum(event_type == "GOAL" & event_player_3 == as.character(player) & !is.na(event_player_3)),
+        A = A1 + A2,
+        P = G + A1 + A2,
+        P1 = G + A1,
+        FOW = sum(event_type == "FAC" & is_home == 1 & (event_player_1 == as.character(player) | event_player_2 == as.character(player))),
+        FOT = sum(event_type == "FAC" & (event_player_1 == as.character(player) | event_player_2 == as.character(player))),
+        SOG = sum(event_type %in% c("SHOT", "GOAL") & event_player_1 == as.character(player)),
+        iCF = sum(event_type %in% names(v.corsi_events) & event_player_1 == as.character(player)),
+        HITS = sum(event_type == "HIT" & event_player_1 == as.character(player)),
+        BLK = sum(event_type == "BLOCK" & event_player_1 == as.character(player)),
+        PEND = sum(event_type == "PENL" & event_player_2 == as.character(player)),
+        PENT = sum(event_type == "PENL" & event_player_1 == as.character(player)),
+        CF = sum(event_type %in% names(v.corsi_events) & is_home == 1),
+        CA = sum(event_type %in% names(v.corsi_events) & is_home != 1))
+  } else {
+    output <- 
+      subset(dataset, !player %in% goalie) %>% group_by(player, team) %>% 
+      summarise(
+        TOI = sum(event_length)/60,
+        G = sum(event_type == "GOAL" & event_player_1 == as.character(player)),
+        A1 = sum(event_type == "GOAL" & event_player_2 == as.character(player) & !is.na(event_player_2)),
+        A2 = sum(event_type == "GOAL" & event_player_3 == as.character(player) & !is.na(event_player_3)),
+        A = A1 + A2,
+        P = G + A1 + A2,
+        P1 = G + A1,
+        FOW = sum(event_type == "FAC" & is_home == 0 & (event_player_1 == as.character(player) | event_player_2 == as.character(player))),
+        FOT = sum(event_type == "FAC" & (event_player_1 == as.character(player) | event_player_2 == as.character(player))),
+        SOG = sum(event_type %in% c("SHOT", "GOAL") & event_player_1 == as.character(player)),
+        iCF = sum(event_type %in% names(v.corsi_events) & event_player_1 == as.character(player)),
+        HITS = sum(event_type == "HIT" & event_player_1 == as.character(player)),
+        BLK = sum(event_type == "BLOCK" & event_player_1 == as.character(player)),
+        PEND = sum(event_type == "PENL" & event_player_2 == as.character(player)),
+        PENT = sum(event_type == "PENL" & event_player_1 == as.character(player)),
+        CF = sum(event_type %in% names(v.corsi_events) & is_home != 1),
+        CA = sum(event_type %in% names(v.corsi_events) & is_home == 1))
+    
+  }
+}
+```
+
+##Summarize for all Players
+To complete the process of summarizing the statistics for all 12 columns listed above, I wrote the below function that utilizes a For Loop to cycle through each of the columns and ultimately combines both the home and away lists. Due to the utilization of the summarize_all(funs(sum)) function below, I also need to recalculate the faceoff percentage for all players
+
+*Note: as you can see below, this function outputs some warnings when binding each of the output files together. I'm not really sure how to solve this, but it doesn't seem to effect the output*
+
+```{r compile_stats}
+fun.skater_summary <- function(dataset) {
+  #DESCRIPTION - Utilize fun.skater_stats function to create stats summary for all player in PBP frame
+  
+  if (is.null(dataset$is_home)) {
+    dataset <- ds.enhancedPBP(dataset)
+  }
+  
+  #Run Skater_Stats function for all 6 skater slots on PBP file
+  for (runcount in c(1:6)) {
+    assign(paste("home_player_summary", runcount, sep = ""), fun.skater_stats(rename(dataset, goalie = home_goalie, player = paste("home_on_", runcount, sep = ""), team = home_team), "home"))
+    assign(paste("away_player_summary", runcount, sep = ""), fun.skater_stats(rename(dataset, goalie = away_goalie, player = paste("away_on_", runcount, sep = ""), team = away_team), "away"))
+  }
+  
+  #Aggregate function output files to create full list of skater stats
+  summary.home_skaters <- bind_rows(home_player_summary1, 
+                                    home_player_summary2, 
+                                    home_player_summary3, 
+                                    home_player_summary4, 
+                                    home_player_summary5, 
+                                    home_player_summary6) %>% 
+    group_by(player, team) %>%
+    summarise_all(funs(sum)) %>%
+    mutate("FO%" = ifelse(FOT == 0, 0, FOW/FOT))
+  
+  summary.away_skaters <- bind_rows(away_player_summary1, 
+                                    away_player_summary2, 
+                                    away_player_summary3, 
+                                    away_player_summary4, 
+                                    away_player_summary5, 
+                                    away_player_summary6) %>% 
+    group_by(player, team) %>%
+    summarise_all(funs(sum)) %>%
+    mutate("FO%" = ifelse(FOT == 0, 0, FOW/FOT))
+    
+  return(list(summary.home_skaters, summary.away_skaters))
+}
+
+skater_summary <- fun.skater_summary(enhanced_pbp)
+```
+
+##Combine Home and Away
+I set up the above function to intentionally return the home and away stats separately in case I want to utilize home or away specific stats in the future. Since that isn't needed for this project, I wrote a quick function that combines both of the outputs into one frame
+
+```{r combine_output}
+fun.combine_skater_stats <- function(skater_list) {
+  output <- skater_list %>%
+    bind_rows() %>%
+    group_by(player, team) %>%
+    summarise_all(funs(sum)) %>%
+    mutate("FO%" = ifelse(FOT == 0, 0, FOW/FOT))
+
+  return(output)
+}
+
+skater_stats <- fun.combine_skater_stats(skater_summary)
+```
+
+##Results
+As you can see, the resulting output includes all players and a fully summarized list of stats. I have spotted checked this output against Corsica and it all appears to be correct
+
+```{r output_sample}
+head(skater_stats)
+```
+
+##Remaining Obstacles and Next Steps
+**Players with Multiple Teams:** The one issue that I appear to still have to tackle is that players who suited up for multiple teams during the season have multiple lines for their team specific stats. At some point I will likely need to combine those lines together so that we get a full player's season stats
+
+**Games Played:** One stat that is noticably absent in my above methodology is games played. My initial thought was to use length() and unique() to identify the individual GameIDs that each player shows up on, however the issue arises that a player may appear in home_on_1 and home_on_6 in the same game which would result in counting the unique GameID twice. If you have any ideas on how to get around this, I would be very interested to see
+
+**Inclusion of Elite Prospects Draft Years and Ages:** After briefly looking through the elite prospects data that was included in the github link that you sent earlier this week, I believe that I can pretty easily tie draft dates and ages to these players by name and team. If that does not work for one reason or another, I also recently came across a player index list at [Natural Stat Trick](https://www.naturalstattrick.com/playerteams.php?stdoi=bio) that can easily be exported to .csv and provides all of the data needed as well
+
