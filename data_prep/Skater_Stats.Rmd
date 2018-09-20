@@ -14,13 +14,14 @@ I utilized the following packages in this process, so I'll load them in at the b
 ```{r load_libraries, message=FALSE, warning=FALSE}
 require(magrittr)
 require(dplyr)
+require(readr)
 ```
 
 ##Initial Data Set
-I've included a sample data set from the 2017-2018 season that I've obtained from Corsica in the same github repository as this markdown document
+The enhanced data sets from Corsica can be found online at [http://www.fenwicka.com/shiny/pbp_20172018.csv], which I loaded into a data frame
 
 ```{r load_data}
-raw_season <- read.csv(file = "~/Data Sets/Hockey/Enhanced PbP/pbp_20172018.csv", header = TRUE)
+raw_season <- read_csv(file = "~/Data Sets/Hockey/Enhanced PbP/pbp_20172018.csv", col_names = TRUE)
 
 ```
 
