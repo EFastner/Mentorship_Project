@@ -1,0 +1,85 @@
+---
+title: "NST_Merge"
+author: "Eric Fastner"
+date: "September 19, 2018"
+output: html_document
+---
+#Merging Natural Stat Trick Bio Data
+
+##Libraries Needed
+Load in the required libraries that will be used in this exercise
+
+```{r libraries, message=FALSE, warning=FALSE}
+require(magrittr)
+require(dplyr)
+```
+
+##Data Sources
+I was able to obtain bio data for all players in the league going back to 2007. The data can be located on [https://www.naturalstattrick.com/playerteams.php?stdoi=bio](Natural Stat Trick) and can be exported to .csv by season
+
+##Methodology
+I've obtained all of the bios of players that skated for an NHL team during the 2007-2008 season through the 2017-2018 season. As this coincides with the PBP data that I've obtained from Corsica, this should be all that we need. The steps that I need to take are as follows:
+
+1. Export all .csv files and label by season (already complete, located in Github repository)
+2. Merge all seasons into one data frame
+3. Join draft dates, birth dates, and ages to the skater summary data that I've outlined in a previous R Markdown document
+
+##Step 2: Merging files
+In order to merge all of the csv files into one data frame, I've written a function that will pull all files in a given directory and merge them
+
+```{r merge function}
+readfiles <- function(dir, sep = "|") {
+  #DESCRIPTION - Load all files in a specified directory into one frame, separator is "|" unless specified
+  filelist <- list.files(dir, 
+                         all.files = FALSE, 
+                         full.names = TRUE)
+  
+  df.combined_files <- do.call("rbind",lapply(filelist, read.delim, sep = sep, header = TRUE))
+  
+  return(df.combined_files)
+  
+}
+
+raw_bios <- readfiles("~/HG_Mentorship/ceiling_projection/data_prep/Natural Stat Trick Bios/", sep = ",")
+```
+
+The resulting frame still has some opportunity to be cleaned up:
+
+```{r bio results}
+head(raw_bios, n = 10)
+
+#All rows of the first column are NA
+unique(raw_bios$X)
+
+#There are a lot of duplicate lines, presumably because nothing changed from year to year for that player
+sum(duplicated(raw_bios))
+```
+
+I'm not sure why there is a blank column at the beginning of the column, but I'll go ahead and remove it as there are no reason to keep it around. Additionally, I'm going to remove the duplicate lines of data as I think it's safe to assume that these are the same player.
+
+```{r clean up frame}
+#Remove Column X
+raw_bios$X <- NULL
+head(raw_bios, n = 10)
+
+#Remove Duplicate Lines
+unique_bios <- unique(raw_bios)
+sum(duplicated(unique_bios))
+```
+
+While none of the rows in our resulting data frame are exactly the same, there are still a number of rows that I suspect are actually the same player
+
+```{r duplicate players}
+
+unique_bios %>% 
+  group_by(Player, Date.of.Birth) %>% 
+  summarise(lines = n()) %>% 
+  filter(lines > 1)
+```
+
+Let's take a look at Aaron Johnson
+
+```{r Aaron Johnson}
+unique_bios %>%
+  filter(Player == "Aaron Johnson")
+```
