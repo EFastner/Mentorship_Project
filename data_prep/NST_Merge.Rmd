@@ -11,6 +11,7 @@ Load in the required libraries that will be used in this exercise
 
 ```{r libraries, message=FALSE, warning=FALSE}
 require(magrittr)
+require(plyr)
 require(dplyr)
 ```
 
@@ -34,7 +35,7 @@ readfiles <- function(dir, sep = "|") {
                          all.files = FALSE, 
                          full.names = TRUE)
   
-  df.combined_files <- do.call("rbind",lapply(filelist, read.delim, sep = sep, header = TRUE))
+  df.combined_files <- do.call("rbind",lapply(filelist, read.delim, sep = sep, header = TRUE, stringsAsFactors = FALSE))
   
   return(df.combined_files)
   
@@ -43,8 +44,8 @@ readfiles <- function(dir, sep = "|") {
 raw_bios <- readfiles("~/HG_Mentorship/ceiling_projection/data_prep/Natural Stat Trick Bios/", sep = ",")
 ```
 
+##Step 3: Tidy Data
 The resulting frame still has some opportunity to be cleaned up:
-
 ```{r bio results}
 head(raw_bios, n = 10)
 
@@ -55,7 +56,7 @@ unique(raw_bios$X)
 sum(duplicated(raw_bios))
 ```
 
-I'm not sure why there is a blank column at the beginning of the column, but I'll go ahead and remove it as there are no reason to keep it around. Additionally, I'm going to remove the duplicate lines of data as I think it's safe to assume that these are the same player.
+I'm not sure why there is a blank column at the beginning of the column, but I'll go ahead and remove it as there are no reason to keep it around. Additionally, I'm going to remove the duplicate lines of data as I think it's safe to assume that these are the same player. One other surprise that is tough to detect is that the space between the first and last name is actually not a regular space. I'm going to change that to a regular space to make it easier to manipulate later.
 
 ```{r clean up frame}
 #Remove Column X
@@ -65,11 +66,14 @@ head(raw_bios, n = 10)
 #Remove Duplicate Lines
 unique_bios <- unique(raw_bios)
 sum(duplicated(unique_bios))
+
+#Change No Break Space
+unique_bios$Player <- gsub("\\W", " ", unique_bios$Player)
 ```
 
 While none of the rows in our resulting data frame are exactly the same, there are still a number of rows that I suspect are actually the same player
 
-```{r duplicate players}
+```{r duplicate players - teams}
 
 unique_bios %>% 
   group_by(Player, Date.of.Birth) %>% 
@@ -82,4 +86,48 @@ Let's take a look at Aaron Johnson
 ```{r Aaron Johnson}
 unique_bios %>%
   filter(Player == "Aaron Johnson")
+```
+
+As you can see, it appears that Aaron Johnson played for 6 teams during this timeframe which is causing the lines to duplicate. I have 2 options: 
+
+1. Leave as is and continue on
+2. Combine all teams into one line and deleting the rest of the lines
+
+In the interest of keeping the data set as small as possible, I'm going to try and go with option two. 
+
+```{r merge teams}
+merged_team_bios <- ddply(unique_bios, colnames(unique_bios[,-2]), summarise, Team = paste(Team, collapse = ", "))
+
+#Rearrange so the newly created team column is back in the second column
+merged_team_bios <- merged_team_bios[,c(1, ncol(merged_team_bios), 2:(ncol(merged_team_bios)-1))]
+
+head(merged_team_bios, n = 10)
+```
+
+Let's run the same duplicate check again and see what happens
+
+```{r duplicate players - position}
+
+merged_team_bios %>% 
+  group_by(Player, Date.of.Birth) %>% 
+  summarise(lines = n()) %>% 
+  filter(lines > 1)
+```
+
+Not quite. Time to do some investigating on Adam Lowry
+
+```{r Adam Lowry}
+merged_team_bios %>% filter(Player == "Adam Lowry")
+
+```
+
+It looks like it's the position column that is causing duplicates this time. I'll run the same code as before, but this time we need to remove duplicate positions as well
+
+```{r merge positions}
+merged_position_bios <- ddply(merged_team_bios, colnames(merged_team_bios[,-3]), summarise, Position = paste(Position, collapse = ", "))
+
+#Rearrange so the newly created team column is back in the second column
+merged_position_bios <- merged_position_bios[,c(1:2, ncol(merged_position_bios), 3:(ncol(merged_position_bios)-1))]
+
+head(merged_position_bios, n = 10)
 ```
