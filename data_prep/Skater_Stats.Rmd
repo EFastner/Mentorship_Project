@@ -92,14 +92,19 @@ fun.skater_stats <- function(dataset, team_indicator) {
         P1 = G + A1,
         FOW = sum(event_type == "FAC" & is_home == 1 & (event_player_1 == as.character(player) | event_player_2 == as.character(player))),
         FOT = sum(event_type == "FAC" & (event_player_1 == as.character(player) | event_player_2 == as.character(player))),
+        FOL = FOT - FOW,
         SOG = sum(event_type %in% c("SHOT", "GOAL") & event_player_1 == as.character(player)),
         iCF = sum(event_type %in% names(v.corsi_events) & event_player_1 == as.character(player)),
         HITS = sum(event_type == "HIT" & event_player_1 == as.character(player)),
         BLK = sum(event_type == "BLOCK" & event_player_1 == as.character(player)),
-        PEND = sum(event_type == "PENL" & event_player_2 == as.character(player)),
+        PEND = sum(event_type == "PENL" & event_player_2 == as.character(player) & !is.na(event_player_2)),
         PENT = sum(event_type == "PENL" & event_player_1 == as.character(player)),
         CF = sum(event_type %in% names(v.corsi_events) & is_home == 1),
-        CA = sum(event_type %in% names(v.corsi_events) & is_home != 1))
+        CA = sum(event_type %in% names(v.corsi_events) & is_home != 1),
+        CF_5v5 = sum(event_type %in% names(v.corsi_events) & is_home == 1 & game_strength_state == "5v5"),
+        CA_5v5 = sum(event_type %in% names(v.corsi_events) & is_home == 0 & game_strength_state == "5v5"),
+        GF_5v5 = sum(event_type == "GOAL" & is_home == 1 & game_strength_state == "5v5"),
+        GA_5v5 = sum(event_type == "GOAL" & is_home == 0 & game_strength_state == "5v5"))
   } else {
     output <- 
       subset(dataset, !player %in% goalie) %>% group_by(player, team) %>% 
@@ -113,17 +118,56 @@ fun.skater_stats <- function(dataset, team_indicator) {
         P1 = G + A1,
         FOW = sum(event_type == "FAC" & is_home == 0 & (event_player_1 == as.character(player) | event_player_2 == as.character(player))),
         FOT = sum(event_type == "FAC" & (event_player_1 == as.character(player) | event_player_2 == as.character(player))),
+        FOL = FOT - FOW,
         SOG = sum(event_type %in% c("SHOT", "GOAL") & event_player_1 == as.character(player)),
         iCF = sum(event_type %in% names(v.corsi_events) & event_player_1 == as.character(player)),
         HITS = sum(event_type == "HIT" & event_player_1 == as.character(player)),
         BLK = sum(event_type == "BLOCK" & event_player_1 == as.character(player)),
-        PEND = sum(event_type == "PENL" & event_player_2 == as.character(player)),
+        PEND = sum(event_type == "PENL" & event_player_2 == as.character(player) & !is.na(event_player_2)),
         PENT = sum(event_type == "PENL" & event_player_1 == as.character(player)),
         CF = sum(event_type %in% names(v.corsi_events) & is_home != 1),
-        CA = sum(event_type %in% names(v.corsi_events) & is_home == 1))
+        CA = sum(event_type %in% names(v.corsi_events) & is_home == 1),
+        CF_5v5 = sum(event_type %in% names(v.corsi_events) & is_home == 0 & game_strength_state == "5v5"),
+        CA_5v5 = sum(event_type %in% names(v.corsi_events) & is_home == 1 & game_strength_state == "5v5"),
+        GF_5v5 = sum(event_type == "GOAL" & is_home == 0 & game_strength_state == "5v5"),
+        GA_5v5 = sum(event_type == "GOAL" & is_home == 1 & game_strength_state == "5v5"))
     
   }
+  
+  output$player <-  as.character(output$player)
+  
+  return(output)
 }
+```
+
+I also hope to calculate a player's gamescore for this exercise, so I wrote a function that will calculate gamescore based on a given set of criteria
+
+```{r Gamescore}
+
+#Game Score Ranks
+c("G" = 0.75,
+  "A1" = 0.7,
+  "A2" = 0.55,
+  "SOG" = 0.075,
+  "BLK" = 0.05,
+  "PENT" = -0.15,
+  "PEND" = 0.15,
+  "FOW" = 0.01,
+  "FOL" = -0.01,
+  "CF_5v5" = 0.05,
+  "CA_5v5" = -0.05,
+  "GF_5v5" = 0.15,
+  "GA_5v5" = -0.15
+) ->
+  st.game_score_weights
+
+fun.gamescore <- function(stats, gs_weights = st.game_score_weights) {
+  #DESCRIPTION - Outputs the gamescore of a given stat line
+  #ARGUMENTS - stats = a list of values corresponding to each item in order: G, A1, A2, iSF, iBLK, iPent, iPend, iFOW, iFOL, CF, CA, GF, GA
+  
+  return(sum(stats * gs_weights))
+}
+
 ```
 
 ##Summarize for all Players
@@ -135,8 +179,8 @@ To complete the process of summarizing the statistics for all 12 columns listed 
 fun.skater_summary <- function(dataset) {
   #DESCRIPTION - Utilize fun.skater_stats function to create stats summary for all player in PBP frame
   
-  if (is.null(dataset$is_home)) {
-    dataset <- ds.enhancedPBP(dataset)
+  if (!("is_home" %in% colnames(dataset))) {
+    dataset <- ds.enhancedPBP(dataset, v.corsi_events = v.corsi_events)
   }
   
   #Run Skater_Stats function for all 6 skater slots on PBP file
@@ -156,6 +200,13 @@ fun.skater_summary <- function(dataset) {
     summarise_all(funs(sum)) %>%
     mutate("FO%" = ifelse(FOT == 0, 0, FOW/FOT))
   
+  for (i in 1:nrow(summary.home_skaters)) {
+    gs_cats <- summary.home_skaters[i,] %>% 
+      select(player, G, A1, A2, SOG, BLK, PENT, PEND, FOW, FOL, CF_5v5, CA_5v5, GF_5v5, GA_5v5)
+    
+    summary.home_skaters[i, "GS"] <- fun.gamescore(gs_cats[,2:14])
+  }
+  
   summary.away_skaters <- bind_rows(away_player_summary1, 
                                     away_player_summary2, 
                                     away_player_summary3, 
@@ -165,7 +216,14 @@ fun.skater_summary <- function(dataset) {
     group_by(player, team) %>%
     summarise_all(funs(sum)) %>%
     mutate("FO%" = ifelse(FOT == 0, 0, FOW/FOT))
+  
+  for (i in 1:nrow(summary.away_skaters)) {
+    gs_cats <- summary.away_skaters[i,] %>% 
+      select(player, G, A1, A2, SOG, BLK, PENT, PEND, FOW, FOL, CF_5v5, CA_5v5, GF_5v5, GA_5v5)
     
+    summary.away_skaters[i, "GS"] <- fun.gamescore(gs_cats[,2:14])
+  }
+  
   return(list(summary.home_skaters, summary.away_skaters))
 }
 
@@ -176,13 +234,16 @@ skater_summary <- fun.skater_summary(enhanced_pbp)
 I set up the above function to intentionally return the home and away stats separately in case I want to utilize home or away specific stats in the future. Since that isn't needed for this project, I wrote a quick function that combines both of the outputs into one frame
 
 ```{r combine_output}
-fun.combine_skater_stats <- function(skater_list) {
-  output <- skater_list %>%
+fun.combine_skater_stats <- function(dataset) {
+  #DESCRIPTION: Combines the home and away skater summary lists created by fun.skater_summary
+  #ARGUMENTS: dataset = A list object with home and away stats in separate lists
+  
+  output <- dataset %>% 
     bind_rows() %>%
     group_by(player, team) %>%
     summarise_all(funs(sum)) %>%
     mutate("FO%" = ifelse(FOT == 0, 0, FOW/FOT))
-
+  
   return(output)
 }
 
@@ -193,7 +254,7 @@ skater_stats <- fun.combine_skater_stats(skater_summary)
 As you can see, the resulting output includes all players and a fully summarized list of stats. I have spotted checked this output against Corsica and it all appears to be correct
 
 ```{r output_sample}
-head(skater_stats)
+head(skater_stats, n=10)
 ```
 
 ##Remaining Obstacles and Next Steps
