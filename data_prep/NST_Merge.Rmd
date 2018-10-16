@@ -57,7 +57,7 @@ unique(raw_bios$X)
 sum(duplicated(raw_bios))
 ```
 
-I'm not sure why there is a blank column at the beginning of the column, but I'll go ahead and remove it as there are no reason to keep it around. Additionally, I'm going to remove the duplicate lines of data as I think it's safe to assume that these are the same player. One other surprise that is tough to detect is that the space between the first and last name is actually not a regular space. I'm going to change that to a regular space to make it easier to manipulate later.
+I'm not sure why there is a blank column at the beginning of the column, but I'll go ahead and remove it as there are no reason to keep it around. Additionally, I'm going to remove the duplicate lines of data as I think it's safe to assume that these are the same player. One other surprise that is tough to detect is that the space between the first and last name is actually not a regular space. I'm going to change that to a period and change all characters to upper case as that will match the name format of my summary data created in Skater_Stats.Rmd
 
 ```{r clean up frame}
 #Remove Column X
@@ -69,7 +69,7 @@ unique_bios <- unique(raw_bios)
 sum(duplicated(unique_bios))
 
 #Change No Break Space
-unique_bios$Player <- gsub("\\W", " ", unique_bios$Player)
+unique_bios$Player <- toupper(gsub("\\W", ".", unique_bios$Player))
 ```
 
 While none of the rows in our resulting data frame are exactly the same, there are still a number of rows that I suspect are actually the same player
@@ -89,46 +89,18 @@ unique_bios %>%
   filter(Player == "Aaron Johnson")
 ```
 
-As you can see, it appears that Aaron Johnson played for 6 teams during this timeframe which is causing the lines to duplicate. I have 2 options: 
+As you can see, it appears that Aaron Johnson played for 6 teams during this timeframe which is causing the lines to duplicate. Further more, it looks like in one season he must have played for 2 separate teams (CGY, EDM). I suspect this may ultimately make it tougher to join player information by name and team. I think I have 3 options: 
 
 1. Leave as is and continue on
 2. Combine all teams into one line and deleting the rest of the lines
+3. Split all of teams into their own lines so that we have multiple lines for each player
 
-In the interest of keeping the data set as small as possible, I'm going to try and go with option two. 
+It may result in a little larger dataset, but I think that the best option may be option 3 so that it saves me time and effort when joining to my summary data.
 
-```{r merge teams}
-merged_team_bios <- ddply(unique_bios, colnames(unique_bios[,-2]), summarise, Team = paste(Team, collapse = ", "))
+```{r split teams}
+split_teams <- separate_rows(unique_bios, Team, sep = ", ")
 
-#Rearrange so the newly created team column is back in the second column
-merged_team_bios <- merged_team_bios[,c(1, ncol(merged_team_bios), 2:(ncol(merged_team_bios)-1))]
-
-head(merged_team_bios, n = 10)
+unique(split_teams$Team)
 ```
 
-Let's run the same duplicate check again and see what happens
-
-```{r duplicate players - position}
-
-merged_team_bios %>% 
-  group_by(Player, Date.of.Birth) %>% 
-  summarise(lines = n()) %>% 
-  filter(lines > 1)
-```
-
-Not quite. Time to do some investigating on Adam Lowry
-
-```{r Adam Lowry}
-merged_team_bios %>% filter(Player == "Adam Lowry")
-
-```
-
-It looks like it's the position column that is causing duplicates this time. I'll run the same code as before, but this time we need to remove duplicate positions as well
-
-```{r merge positions}
-merged_position_bios <- ddply(merged_team_bios, colnames(merged_team_bios[,-3]), summarise, Position = paste(Position, collapse = ", "))
-
-#Rearrange so the newly created team column is back in the second column
-merged_position_bios <- merged_position_bios[,c(1:2, ncol(merged_position_bios), 3:(ncol(merged_position_bios)-1))]
-
-head(merged_position_bios, n = 10)
-```
+It looks like we now have a unique row for each team which we should now be able to join to the summary data that I created in my Skater_Stats.Rmd file using Player Name and Team. 
