@@ -11,6 +11,7 @@ Load in the required libraries that will be used in this exercise
 
 ```{r libraries, message=FALSE, warning=FALSE}
 require(magrittr)
+require(tidyr)
 require(plyr)
 require(dplyr)
 ```
