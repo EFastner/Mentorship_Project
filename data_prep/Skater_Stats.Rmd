@@ -21,7 +21,7 @@ require(readr)
 The enhanced data sets from Corsica can be found online at [http://www.fenwicka.com/shiny/pbp_20172018.csv], which I loaded into a data frame
 
 ```{r load_data}
-raw_season <- read_csv(file = "~/Data Sets/Hockey/Enhanced PbP/pbp_20172018.csv", col_names = TRUE)
+raw_season <- read_csv(file = "~/Data_Sets/Hockey/Enhanced PbP/pbp_20172018.csv", col_names = TRUE)
 
 ```
 
