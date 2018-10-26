@@ -76,10 +76,12 @@ While none of the rows in our resulting data frame are exactly the same, there a
 
 ```{r duplicate players - teams}
 
-unique_bios %>% 
-  group_by(Player, Date.of.Birth) %>% 
-  summarise(lines = n()) %>% 
-  filter(lines > 1)
+#THIS LINE IS BROKEN. Caused by usaged of n() in the summarise function? "Error: This function should not be called directly"
+
+# unique_bios %>% 
+#   group_by(Player, Date.of.Birth) %>% 
+#   summarise(lines = n()) %>% 
+#   filter(lines > 1)
 ```
 
 Let's take a look at Aaron Johnson
@@ -100,7 +102,9 @@ It may result in a little larger dataset, but I think that the best option may b
 ```{r split teams}
 split_teams <- separate_rows(unique_bios, Team, sep = ", ")
 
-unique(split_teams$Team)
+final_player_bios <- unique(split_teams)
+
+unique(final_player_bios$Team)
 ```
 
 It looks like we now have a unique row for each team which we should now be able to join to the summary data that I created in my Skater_Stats.Rmd file using Player Name and Team. 

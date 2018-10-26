@@ -13,6 +13,7 @@ I utilized the following packages in this process, so I'll load them in at the b
 
 ```{r load_libraries, message=FALSE, warning=FALSE}
 require(magrittr)
+require(plyr)
 require(dplyr)
 require(readr)
 ```
@@ -81,7 +82,7 @@ fun.skater_stats <- function(dataset, team_indicator) {
   
   if(team_indicator == "home") {
     output <- 
-      subset(dataset, !player %in% goalie) %>% group_by(player, team) %>% 
+      subset(dataset, !player %in% goalie) %>% group_by(player, team, season) %>% 
       summarise(
         TOI = sum(event_length)/60,
         G = sum(event_type == "GOAL" & event_player_1 == as.character(player)),
@@ -107,7 +108,7 @@ fun.skater_stats <- function(dataset, team_indicator) {
         GA_5v5 = sum(event_type == "GOAL" & is_home == 0 & game_strength_state == "5v5"))
   } else {
     output <- 
-      subset(dataset, !player %in% goalie) %>% group_by(player, team) %>% 
+      subset(dataset, !player %in% goalie) %>% group_by(player, team, season) %>% 
       summarise(
         TOI = sum(event_length)/60,
         G = sum(event_type == "GOAL" & event_player_1 == as.character(player)),
@@ -185,8 +186,15 @@ fun.skater_summary <- function(dataset) {
   
   #Run Skater_Stats function for all 6 skater slots on PBP file
   for (runcount in c(1:6)) {
-    assign(paste("home_player_summary", runcount, sep = ""), fun.skater_stats(rename(dataset, goalie = home_goalie, player = paste("home_on_", runcount, sep = ""), team = home_team), "home"))
-    assign(paste("away_player_summary", runcount, sep = ""), fun.skater_stats(rename(dataset, goalie = away_goalie, player = paste("away_on_", runcount, sep = ""), team = away_team), "away"))
+    assign(paste("home_player_summary", runcount, sep = ""), fun.skater_stats(rename(dataset, 
+                                                                                     goalie = home_goalie, 
+                                                                                     player = paste("home_on_", runcount, sep = ""), 
+                                                                                     team = home_team), "home"))
+    
+    assign(paste("away_player_summary", runcount, sep = ""), fun.skater_stats(rename(dataset, 
+                                                                                     goalie = away_goalie, 
+                                                                                     player = paste("away_on_", runcount, sep = ""), 
+                                                                                     team = away_team), "away"))
   }
   
   #Aggregate function output files to create full list of skater stats
@@ -196,13 +204,13 @@ fun.skater_summary <- function(dataset) {
                                     home_player_summary4, 
                                     home_player_summary5, 
                                     home_player_summary6) %>% 
-    group_by(player, team) %>%
+    group_by(player, season, team) %>%
     summarise_all(funs(sum)) %>%
     mutate("FO%" = ifelse(FOT == 0, 0, FOW/FOT))
   
   for (i in 1:nrow(summary.home_skaters)) {
     gs_cats <- summary.home_skaters[i,] %>% 
-      select(player, G, A1, A2, SOG, BLK, PENT, PEND, FOW, FOL, CF_5v5, CA_5v5, GF_5v5, GA_5v5)
+      select(player, season, G, A1, A2, SOG, BLK, PENT, PEND, FOW, FOL, CF_5v5, CA_5v5, GF_5v5, GA_5v5)
     
     summary.home_skaters[i, "GS"] <- fun.gamescore(gs_cats[,2:14])
   }
@@ -213,13 +221,13 @@ fun.skater_summary <- function(dataset) {
                                     away_player_summary4, 
                                     away_player_summary5, 
                                     away_player_summary6) %>% 
-    group_by(player, team) %>%
+    group_by(player, season, team) %>%
     summarise_all(funs(sum)) %>%
     mutate("FO%" = ifelse(FOT == 0, 0, FOW/FOT))
   
   for (i in 1:nrow(summary.away_skaters)) {
     gs_cats <- summary.away_skaters[i,] %>% 
-      select(player, G, A1, A2, SOG, BLK, PENT, PEND, FOW, FOL, CF_5v5, CA_5v5, GF_5v5, GA_5v5)
+      select(player, season, G, A1, A2, SOG, BLK, PENT, PEND, FOW, FOL, CF_5v5, CA_5v5, GF_5v5, GA_5v5)
     
     summary.away_skaters[i, "GS"] <- fun.gamescore(gs_cats[,2:14])
   }
@@ -240,7 +248,7 @@ fun.combine_skater_stats <- function(dataset) {
   
   output <- dataset %>% 
     bind_rows() %>%
-    group_by(player, team) %>%
+    group_by(player, season, team) %>%
     summarise_all(funs(sum)) %>%
     mutate("FO%" = ifelse(FOT == 0, 0, FOW/FOT))
   
@@ -250,6 +258,7 @@ fun.combine_skater_stats <- function(dataset) {
 skater_stats <- fun.combine_skater_stats(skater_summary)
 ```
 
+
 ##Results
 As you can see, the resulting output includes all players and a fully summarized list of stats. I have spotted checked this output against Corsica and it all appears to be correct
 
@@ -257,10 +266,50 @@ As you can see, the resulting output includes all players and a fully summarized
 head(skater_stats, n=10)
 ```
 
+##Repeat for all seasons
+Everything looks correct, however repeating this process for all seasons at once is just too much data for my computer to handle. I suspect that attempting to store over 10 years of PBP data in memory is just causing too many performance issues. As a result, I'm going to start by summarizing each season individually and then combine them into one file that I can save to my hard disk
+
+```{r Run All Seasons, message=FALSE, warning=TRUE}
+
+#Function used in NST_Merge file as well
+readfiles <- function(dir, sep = "|") {
+  #DESCRIPTION - Load all files in a specified directory into one frame, separator is "|" unless specified
+  filelist <- list.files(dir, 
+                         all.files = FALSE, 
+                         full.names = TRUE)
+  
+  df.combined_files <- do.call("rbind",lapply(filelist, read.delim, sep = sep, header = TRUE, stringsAsFactors = FALSE))
+  
+  return(df.combined_files)
+  
+}
+
+season_IDs <- c("20072008", "20082009", "20092010", "20102011", "20112012", "20122013", "20132014", "20142015", "20152016", "20162017", "20172018")
+
+#Loop through all seasons and save individual file
+for (i in 1:length(season_IDs)){
+
+  raw_season <- read_csv(paste0("~/Data_Sets/Hockey/Enhanced PbP/pbp_", season_IDs[i], ".csv"), col_names = TRUE)
+
+  season_enhanced_pbp <- ds.enhancedPBP(raw_season)
+
+  season_skater_summary <- fun.skater_summary(season_enhanced_pbp)
+
+  season_skater_stats <- fun.combine_skater_stats(season_skater_summary)
+
+  write_csv(season_skater_stats, path = paste0("~/Data_Sets/Hockey/Enhanced PbP/Skater_Stats/Skater_Stats_", season_IDs[i], ".csv"))
+
+}
+
+#Read in all files and save
+all_season_stats <- readfiles("~/Data_Sets/Hockey/Enhanced PbP/Skater_Stats", sep = ",")
+write_csv(all_season_stats, path = "~/Data_Sets/Hockey/Enhanced PbP/Skater_Stats/all_season_stats.csv")
+```
+
 ##Remaining Obstacles and Next Steps
 **Players with Multiple Teams:** The one issue that I appear to still have to tackle is that players who suited up for multiple teams during the season have multiple lines for their team specific stats. At some point I will likely need to combine those lines together so that we get a full player's season stats
 
 **Games Played:** One stat that is noticably absent in my above methodology is games played. My initial thought was to use length() and unique() to identify the individual GameIDs that each player shows up on, however the issue arises that a player may appear in home_on_1 and home_on_6 in the same game which would result in counting the unique GameID twice. If you have any ideas on how to get around this, I would be very interested to see
 
-**Inclusion of Draft Years and Ages:** I recently came across a player index list at [Natural Stat Trick](https://www.naturalstattrick.com/playerteams.php?stdoi=bio) that can easily be exported to .csv and provides all of the data needed to add Draft Years and Ages. After reviewing the elite prospects data that you sent me earlier this week, I think that the issue there will be that one of the only ways to tie a player to that data will be by name and possibly stats. The benefit to the Natural Stat Trick data is that it includes teams, which should really come in handy when ensuring that I am joining the right data to each player
+**SOLVED - Inclusion of Draft Years and Ages:** I recently came across a player index list at [Natural Stat Trick](https://www.naturalstattrick.com/playerteams.php?stdoi=bio) that can easily be exported to .csv and provides all of the data needed to add Draft Years and Ages. After reviewing the elite prospects data that you sent me earlier this week, I think that the issue there will be that one of the only ways to tie a player to that data will be by name and possibly stats. The benefit to the Natural Stat Trick data is that it includes teams, which should really come in handy when ensuring that I am joining the right data to each player
 

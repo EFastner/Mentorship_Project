@@ -1,0 +1,20 @@
+---
+title: "Final_Data_Set"
+author: "Eric Fastner"
+date: "October 22, 2018"
+output: html_document
+---
+
+##Quick Recap
+So far, I've used the Skater_Stats.Rmd R markdown file to summarise all of the stats for each player that appears on an NHL raw play-by-play file going back to 2007. Using the NST_Merge.Rmd R markdown file I was able to tidy up my player bio data found on Natural Stat Trick. My last step is to join these data sets and verify for accuracy. 
+
+##Step 1: Join the Data
+```{r Join Data}
+require(plyr)
+require(dplyr)
+
+df.raw_join <- full_join(all_season_stats, final_player_bios, by = c("player" = "Player", "team" = "Team"))
+
+head(df.raw_join, n = 10)
+
+```
